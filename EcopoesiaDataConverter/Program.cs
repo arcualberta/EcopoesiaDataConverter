@@ -91,7 +91,7 @@ namespace EcopoesiaDataConverter
                     XAttribute xmlLangEn = new XAttribute(XNamespace.Xml + "lang", "en");
                     XElement aggregations = new XElement("aggregations");
                     //int fileCount = 1;
-                    XAttribute xmlLangSp = new XAttribute(XNamespace.Xml + "lang", "sp");
+                    XAttribute xmlLangSp = new XAttribute(XNamespace.Xml + "lang", "es");
                     int countFile = 0;
                     int countSaveFile = 1;
                     foreach (string fname in files) //each file = each item
@@ -143,10 +143,17 @@ namespace EcopoesiaDataConverter
                                 valueElement.Add(textValue);
                                 
                                 textValue.Add(xmlLangEn);
-                                textValue.Value = value ?? ""; //en
+                                if(value != null)
+                                   textValue.Value = value; //en
+
                                 XElement textValue2 = new XElement("text");
                                 textValue2.Add(xmlLangSp);
-                                textValue2.Value = valsp;
+
+                                if (valsp != null)
+                                {
+                                    textValue2.Value = valsp;
+                                   
+                                }
                                 valueElement.Add(textValue2);
                             }
                            
