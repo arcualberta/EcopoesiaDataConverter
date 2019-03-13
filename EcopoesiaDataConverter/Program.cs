@@ -144,14 +144,14 @@ namespace EcopoesiaDataConverter
                                 
                                 textValue.Add(xmlLangEn);
                                 if(value != null)
-                                   textValue.Value = value; //en
+                                   textValue.Value = value.Replace("\n", "\n<br/>"); //en
 
                                 XElement textValue2 = new XElement("text");
                                 textValue2.Add(xmlLangSp);
 
                                 if (valsp != null)
                                 {
-                                    textValue2.Value = valsp;
+                                    textValue2.Value = valsp.Replace("\n", "\n<br/>");
                                    
                                 }
                                 valueElement.Add(textValue2);

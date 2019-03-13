@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EcopoesiaDataConverter", "EcopoesiaDataConverter\EcopoesiaDataConverter.csproj", "{CD2EAB8B-3A94-4A0B-ABEE-7B56E8CCF5E5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5D2C027E-76F8-4CF0-8C58-CFD5219E3D18} = {5D2C027E-76F8-4CF0-8C58-CFD5219E3D18}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catfish.Core", "..\Melania-Cathfish\Catfish\Catfish.Core\Catfish.Core.csproj", "{5D2C027E-76F8-4CF0-8C58-CFD5219E3D18}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catfish.Core", "..\Catfish\Catfish.Core\Catfish.Core.csproj", "{5D2C027E-76F8-4CF0-8C58-CFD5219E3D18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
