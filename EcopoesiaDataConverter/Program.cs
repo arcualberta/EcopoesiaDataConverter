@@ -217,8 +217,9 @@ namespace EcopoesiaDataConverter
                         if (countFile == MAXFILES) //save the file for every 10k items
                         {
                             XElement _relationships = createRelationships();
-                            aggregations.Add(_relationships);
+                           
                             ingestion.Add(aggregations);
+                            ingestion.Add(_relationships);
                             doc.Save(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml");
                             countFile = 0;
                             aggregations.RemoveAll();
@@ -235,8 +236,9 @@ namespace EcopoesiaDataConverter
 
                     //save file
                     XElement relationships = createRelationships();
-                    aggregations.Add(relationships);
+                   
                     ingestion.Add(aggregations);
+                    ingestion.Add(relationships);
                     doc.Save(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml");
                    
                     aggregations.RemoveAll();
