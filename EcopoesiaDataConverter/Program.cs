@@ -143,7 +143,7 @@ namespace EcopoesiaDataConverter
                                 valueElement.Add(textValue);
                                 
                                 textValue.Add(xmlLangEn);
-                                textValue.Value = value; //en
+                                textValue.Value = value ?? ""; //en
                                 XElement textValue2 = new XElement("text");
                                 textValue2.Add(xmlLangSp);
                                 textValue2.Value = valsp;
@@ -172,7 +172,7 @@ namespace EcopoesiaDataConverter
 
                         foreach (XElement mEl in poemMetadata.Descendants("field"))
                         {
-                            XElement field = mEl;
+                            XElement field = new XElement(mEl);
                             if (mEl.Element("name").Value == "Title")
                             {  
                                 setValue(field, eco.titleEn, eco.titleSp);   
