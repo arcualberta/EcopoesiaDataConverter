@@ -313,7 +313,8 @@ namespace EcopoesiaDataConverter
 
                     ingestion.Add(aggregations);
                     ingestion.Add(relationships);
-                    doc.Save(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml");
+
+                    WriteDocument(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml", doc);
 
                     aggregations.RemoveAll();
                     ingestion.RemoveAll();
@@ -375,9 +376,8 @@ namespace EcopoesiaDataConverter
                         {
                             lName = mEl.Value.Substring(8).Trim();
                         }
-
-                        
                     }
+
                     //check if author has been created in the db
                     if(lName.Equals(authorNames[0].Trim(), StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -508,6 +508,56 @@ namespace EcopoesiaDataConverter
             return null;
         }
 
+        public static void WriteDocument(string path, XDocument doc)
+        {
+            using(StreamWriter writer = new StreamWriter(path, false, Encoding.UTF8))
+            {
+                doc.Save(writer);
+            }
+        }
+
+        // Code Found HERE: https://stackoverflow.com/questions/3825390/effective-way-to-find-any-files-encoding
+        // And HERE: https://social.msdn.microsoft.com/Forums/en-US/b172cd4d-25fe-4696-8c0f-37226c053d71/how-to-detect-encoding-file-in-ansi-utf8-and-utf8-without-bom?forum=csharpgeneral
+        // This was modified to check if we had a non BOM UTF-8 file.
+        public static Encoding GetEncoding(string filename)
+        {
+            // Read the BOM
+            var bom = new byte[4];
+            
+            using (var file = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            {
+                file.Read(bom, 0, 4);
+            }
+
+            // Analyze the BOM
+            if (bom[0] == 0x2b && bom[1] == 0x2f && bom[2] == 0x76) return Encoding.UTF7;
+            if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf) return Encoding.UTF8;
+            if (bom[0] == 0xff && bom[1] == 0xfe) return Encoding.Unicode; //UTF-16LE
+            if (bom[0] == 0xfe && bom[1] == 0xff) return Encoding.BigEndianUnicode; //UTF-16BE
+            if (bom[0] == 0 && bom[1] == 0 && bom[2] == 0xfe && bom[3] == 0xff) return Encoding.UTF32;
+            if (ValidateUtf8NoBOM(filename)) return Encoding.UTF8;
+
+            return Encoding.Default;
+        }
+
+        private static bool ValidateUtf8NoBOM(string FileSource)
+        {
+            bool bReturn = false;
+            string TextANSI = "";
+
+            //Read the file as  ANSI
+            using (StreamReader reader = new StreamReader(FileSource, Encoding.Default, false)) {
+                TextANSI = reader.ReadToEnd();
+            }
+
+            // if the file contains special characters is UTF8 text read ansi show signs
+
+            if (TextANSI.Contains("Ã") || TextANSI.Contains("±"))
+                 bReturn = true;
+
+            return bReturn;
+        }
+
         /// <summary>
         /// extract content from xml input file
         /// </summary>
@@ -517,7 +567,11 @@ namespace EcopoesiaDataConverter
         {
             ecopoesia eco = new ecopoesia();
             XDocument poemDoc = null;
-            using (StreamReader oReader = new StreamReader(fname, Encoding.GetEncoding("ISO-8859-1")))
+            Encoding encoding = GetEncoding(fname);
+
+            Console.WriteLine("{0} {1}", fname, encoding.EncodingName);
+
+            using (StreamReader oReader = new StreamReader(fname, encoding))
             {
                 poemDoc = XDocument.Load(oReader);
                 if (poemDoc.Root.Name.ToString().Equals("poem"))
