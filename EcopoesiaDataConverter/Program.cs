@@ -91,14 +91,14 @@ namespace EcopoesiaDataConverter
             {
                 if (s.Name == "title")
                 {
-                    langContent.title = s.Value;
+                    langContent.title = s.ToString().Replace("<title>","").Replace("</title>","");
                 }
             }
             foreach (XElement s in element.Descendants("body"))
             {
                 if (s.Name == "body")
                 {
-                    langContent.content = ExtractContent(s);
+                    langContent.content = ExtractContent(s);// s.ToString().Replace("<body>", "").Replace("</body>", "").Replace("<indent>", "<p>").Replace("</indent>", "</p>");//ExtractContent(s);
                 }
             }
             foreach (XElement s in element.Descendants("ref"))
