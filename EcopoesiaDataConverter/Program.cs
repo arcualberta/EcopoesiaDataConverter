@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using Catfish.Core.Models;
 using Catfish.Core.Services;
 using Catfish.Core.Contexts;
+using System.Configuration;
 
 namespace EcopoesiaDataConverter
 {
@@ -58,8 +59,8 @@ namespace EcopoesiaDataConverter
     {
         public static string PoemEntityTypeName = "Poems";
         public static string AuthorEntityTypeName = "Author";
-        public static int PoemsMetadataSetId = 1;
-        public static int AuthorMetadataSetId = 2;
+        public static int PoemsMetadataSetId = Convert.ToInt16(ConfigurationManager.AppSettings["PoemMetadataSetId"].ToString());//170;//1;
+        public static int AuthorMetadataSetId = Convert.ToInt16(ConfigurationManager.AppSettings["AuthorMetadataSetId"].ToString());//165;//2;
         public static int MAXFILES = 5000;
         public static List<Author> CreatedAuthorList = new List<Author>(); //For keep track of author who's not in the db yet but has been created in this ingestion process
         public static string AuthorGuid = string.Empty;

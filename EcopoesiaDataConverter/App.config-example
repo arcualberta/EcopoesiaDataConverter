@@ -6,8 +6,8 @@
   </configSections>
   <appSettings>
     <add key="SolrServer" value="http://localhost:8983/solr/CatfishTest" />
-    <add key="PoemMetadataSetId" value="1"/>
-    <add key="AuthorMetadataSetId" value="2"/>
+    <add key="PoemMetadataSetId" value="170" />
+    <add key="AuthorMetadataSetId" value="165" />
   </appSettings>
   <startup>
     <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.6" />
