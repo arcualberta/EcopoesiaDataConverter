@@ -8,7 +8,6 @@ using Catfish.Core.Models;
 using Catfish.Core.Services;
 using Catfish.Core.Contexts;
 
-
 namespace EcopoesiaDataConverter
 {
     public class LanguageContent
@@ -41,6 +40,13 @@ namespace EcopoesiaDataConverter
     {
         public string fName { get; set; }
         public string lName { get; set; }
+
+        public List<Author> Aliases { get; set; }
+
+        public Author()
+        {
+            Aliases = new List<Author>();
+        }
     }
 
     public class Relationship
@@ -52,8 +58,8 @@ namespace EcopoesiaDataConverter
     {
         public static string PoemEntityTypeName = "Poems";
         public static string AuthorEntityTypeName = "Author";
-        public static int PoemsMetadataSetId = 1;
-        public static int AuthorMetadataSetId = 2;
+        public static int PoemsMetadataSetId = 170;//1;
+        public static int AuthorMetadataSetId = 165;//2;
         public static int MAXFILES = 5000;
         public static List<Author> CreatedAuthorList = new List<Author>(); //For keep track of author who's not in the db yet but has been created in this ingestion process
         public static string AuthorGuid = string.Empty;
@@ -109,7 +115,7 @@ namespace EcopoesiaDataConverter
             string pathSource = string.Empty;
             string pathOutput = string.Empty;
             string[] files;
-
+            string[] authDirs;
 
             CatfishDbContext db = new CatfishDbContext();
             Catfish.Core.Contexts.AccessContext current = new AccessContext(AccessContext.PublicAccessGuid, true, db);
@@ -121,15 +127,17 @@ namespace EcopoesiaDataConverter
                 //2nd is the path to folder where the output will be located
                 //metadataSetStructure = XDocument.Load(args[0]);
                 pathOutput = args[1];
-                files = Directory.GetFiles(args[0], "*.xml", SearchOption.AllDirectories);
-
-                XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"));
-
-                // Catfish.Core.Models.Ingestion.Ingestion ingestion = new Catfish.Core.Models.Ingestion.Ingestion();
-                //  ingestion.Overwrite = false;
-
-                if (files.Length > 0)
+                authDirs = Directory.GetDirectories(args[0],"*", SearchOption.TopDirectoryOnly);
+                int countSaveFile = 1;
+                for (int j=0; j < authDirs.Length - 1; j++)
                 {
+
+                    // files = Directory.GetFiles(args[0], "*.xml", SearchOption.AllDirectories);
+                    files = Directory.GetFiles(authDirs[j], "*.xml", SearchOption.AllDirectories);
+                    XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"));
+
+                    // Catfish.Core.Models.Ingestion.Ingestion ingestion = new Catfish.Core.Models.Ingestion.Ingestion();
+                    //  ingestion.Overwrite = false;
                     MetadataService mService = new MetadataService(db);
 
                     EntityService entService = new EntityService(db);
@@ -150,179 +158,266 @@ namespace EcopoesiaDataConverter
                     XAttribute xmlLangSp = new XAttribute(XNamespace.Xml + "lang", "es");
                     XAttribute xmlLangPt = new XAttribute(XNamespace.Xml + "lang", "pt");
                     int countFile = 0;
-                    int countSaveFile = 1;
-                    foreach (string fname in files) //each file = each item
-                    {
-                        countFile++;
-                        XElement item = new XElement("item");
-                        aggregations.Add(item);
-                        string now = DateTime.Now.ToShortDateString();
-                        item.Add(new XAttribute("created", now));
-                        item.Add(new XAttribute("updated", now));
-                        item.Add(new XAttribute("model-type", "Catfish.Core.Models.CFItem, Catfish.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"));
-                        item.Add(new XAttribute("IsRequired", "false"));
-                        string itemGuid = Guid.NewGuid().ToString();
-                        item.Add(new XAttribute("guid", itemGuid));
-                        item.Add(new XAttribute("entity-type", PoemEntityTypeName));
+                   
 
-                        XElement metadata = new XElement("metadata");
-                        item.Add(metadata);
-                        XElement mdSet = new XElement("metadata-set");
-                        foreach (XAttribute att in poemMetadata.Attributes()) //grab the metadataset and all it's attribute
+                    if (files.Length > 0)
+                    {
+                        
+
+                        //find author aliases
+                        Author _authorName = new Author();
+                        foreach (string f in files) //each file = each item
                         {
-                            mdSet.Add(new XAttribute(att.Name, att.Value));
+                            getAuthorAliases(f, _authorName);
                         }
 
-                        metadata.Add(mdSet);
-                        XElement eFields = new XElement("fields");
-                        mdSet.Add(eFields);
-
-                        XElement fields = poemMetadata.Element("fields");
-
-                        ecopoesia eco = getContent(fname); //grab all the content from input file
-
-                        //set text value
-                        Action<XElement, string, string, string> setValue = (field, value, valsp, valpt) =>
+                            foreach (string fname in files) //each file = each item
                         {
-                            XElement valueElement = field.Element("value");
+                            countFile++;
+                            XElement item = new XElement("item");
+                            aggregations.Add(item);
+                            string now = DateTime.Now.ToShortDateString();
+                            item.Add(new XAttribute("created", now));
+                            item.Add(new XAttribute("updated", now));
+                            item.Add(new XAttribute("model-type", "Catfish.Core.Models.CFItem, Catfish.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"));
+                            item.Add(new XAttribute("IsRequired", "false"));
+                            string itemGuid = Guid.NewGuid().ToString();
+                            item.Add(new XAttribute("guid", itemGuid));
+                            item.Add(new XAttribute("entity-type", PoemEntityTypeName));
 
-                            if (valueElement == null)
+                            XElement metadata = new XElement("metadata");
+                            item.Add(metadata);
+                            XElement mdSet = new XElement("metadata-set");
+                            foreach (XAttribute att in poemMetadata.Attributes()) //grab the metadataset and all it's attribute
                             {
-                                valueElement = new XElement("value");
-                                field.Add(valueElement);
+                                mdSet.Add(new XAttribute(att.Name, att.Value));
                             }
 
-                            XElement textValue = valueElement.Element("text");
+                            metadata.Add(mdSet);
+                            XElement eFields = new XElement("fields");
+                            mdSet.Add(eFields);
 
-                            if (textValue == null)
+                            XElement fields = poemMetadata.Element("fields");
+
+                            ecopoesia eco = getContent(fname); //grab all the content from input file
+
+                            //set text value
+                            Action<XElement, string, string, string> setValue = (field, value, valsp, valpt) =>
                             {
-                                textValue = new XElement("text");
-                                valueElement.Add(textValue);
+                                XElement valueElement = field.Element("value");
 
-                                textValue.Add(xmlLangEn);
-                                if (value != null)
-                                    textValue.Value = value; //en
+                                if (valueElement == null)
+                                {
+                                    valueElement = new XElement("value");
+                                    field.Add(valueElement);
+                                }
+
+                                XElement textValue = valueElement.Element("text");
+
+                                if (textValue == null)
+                                {
+                                    textValue = new XElement("text");
+                                    valueElement.Add(textValue);
+
+                                    textValue.Add(xmlLangEn);
+                                    if (value != null)
+                                        textValue.Value = value; //en
 
                                 XElement textValue2 = new XElement("text");
-                                textValue2.Add(xmlLangSp);
+                                    textValue2.Add(xmlLangSp);
 
-                                if (valsp != null)
-                                {
-                                    textValue2.Value = valsp;
-
-                                }
-                                valueElement.Add(textValue2);
-
-                                XElement textValue3 = new XElement("text");
-                                textValue3.Add(xmlLangPt);
-
-                                if (valpt != null)
-                                {
-                                    textValue3.Value = valpt;
-
-                                }
-                                valueElement.Add(textValue3);
-                            }
-                        };
-
-                        Action<XElement, string> setOption = (optionsField, value) =>
-                        {
-                            string[] cats = value.Split(';');
-                            foreach (XElement op in optionsField.Elements())
-                            {
-                                for (int i = 0; i < cats.Length; i++)
-                                {
-                                    if (op.Value.Equals(cats[i].Trim(), StringComparison.OrdinalIgnoreCase))
+                                    if (valsp != null)
                                     {
-                                        op.SetAttributeValue("selected", true);
-                                        break;
+                                        textValue2.Value = valsp;
+
+                                    }
+                                    valueElement.Add(textValue2);
+
+                                    XElement textValue3 = new XElement("text");
+                                    textValue3.Add(xmlLangPt);
+
+                                    if (valpt != null)
+                                    {
+                                        textValue3.Value = valpt;
+
+                                    }
+                                    valueElement.Add(textValue3);
+                                }
+                            };
+
+                            Action<XElement, string> setOption = (optionsField, value) =>
+                            {
+                                string[] cats = value.Split(';');
+                                foreach (XElement op in optionsField.Elements())
+                                {
+                                    for (int i = 0; i < cats.Length; i++)
+                                    {
+                                        if (op.Value.Equals(cats[i].Trim(), StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            op.SetAttributeValue("selected", true);
+                                            break;
+                                        }
+                                    }
+                                }
+                            };
+
+
+                            foreach (XElement mEl in poemMetadata.Descendants("field"))
+                            {
+                                XElement field = new XElement(mEl);
+                                string fieldName = mEl.Element("name").Elements().First().Value;
+
+                                if (fieldName == "Title")
+                                {
+                                    setValue(field, eco.langContent["en"].title, eco.langContent["es"].title, eco.langContent["pt"].title);
+                                }
+                                else if (fieldName == "Author")
+                                {
+                                    setValue(field, eco.langContent["en"].title, eco.langContent["es"].title, eco.langContent["pt"].title);
+                                }
+                                else if (fieldName == "Content")
+                                {
+                                    setValue(field, eco.langContent["en"].content, eco.langContent["es"].content, eco.langContent["pt"].content);
+                                }
+                                else if (fieldName == "Country")
+                                {
+                                    setValue(field, eco.country, "", "");
+                                }
+                                else if (fieldName == "Biome")
+                                {
+                                    setValue(field, eco.biome, "", "");
+                                }
+                                else if (fieldName == "RelatedLinks")
+                                {
+                                    setValue(field, eco.langContent["en"].reference, eco.langContent["es"].reference, eco.langContent["pt"].reference);
+                                }
+                                else if (fieldName == "Category")
+                                {
+                                    //setValue(field, eco.country, "");
+                                    setOption(field.Element("options"), eco.category);
+                                }
+
+                                eFields.Add(field);
+                            }
+
+                            //create author entity
+                            XElement author = createAuthorEntity(eco.author, authorMetadataSet.Id, authorMetadata, db, _authorName);
+                            if (author != null)
+                            {
+                                aggregations.Add(author);
+
+                            }
+
+                            //if (countFile == MAXFILES) //save the file for every 10k items
+                            //{
+                            //    XElement _relationships = createRelationships();
+
+                            //    ingestion.Add(aggregations);
+                            //    ingestion.Add(_relationships);
+                            //    doc.Save(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml");
+                            //    countFile = 0;
+                            //    aggregations.RemoveAll();
+                            //    ingestion.RemoveAll();
+                            //    countSaveFile++;
+
+                            //    RelationshipsList.Clear();
+                            //}
+
+                            //add relationship
+                            RelationshipsList.Add(new Relationship { parentGuid = AuthorGuid, childGuid = itemGuid });
+
+                        }
+
+                        //save file
+
+                        //if (countFile == MAXFILES) //save the file for every 10k items
+                        //{
+                        //    XElement _relationships = createRelationships();
+
+                        //    ingestion.Add(aggregations);
+                        //    ingestion.Add(_relationships);
+                        //    doc.Save(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml");
+                        //    countFile = 0;
+                        //    aggregations.RemoveAll();
+                        //    ingestion.RemoveAll();
+                        //    countSaveFile++;
+
+                        //    RelationshipsList.Clear();
+                        //}
+                        XElement relationships = createRelationships();
+
+                        ingestion.Add(aggregations);
+                        ingestion.Add(relationships);
+
+                        WriteDocument(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml", doc);
+                        countSaveFile++;
+                        aggregations.RemoveAll();
+                        ingestion.RemoveAll();
+
+                        RelationshipsList.Clear();
+
+                    }
+                }
+            }
+        }
+
+        public static Author getAuthorAliases(string fname, Author author)
+        {
+
+            XDocument poemDoc = null;
+            Encoding encoding = GetEncoding(fname);
+
+
+
+            using (StreamReader oReader = new StreamReader(fname, encoding))
+            {
+                poemDoc = XDocument.Load(oReader);
+                if (poemDoc.Root.Name.ToString().Equals("poem"))
+                {
+                    //author
+                    foreach (XElement el in poemDoc.Descendants("author"))
+                    {
+                        if (el.Name == "author")
+                        {
+                            string name = el.Value;
+                            if (!string.IsNullOrEmpty(name))
+                            {
+                                string[] authorNames = name.Split(';'); //1st - last name, 2nd first name
+                                if (string.IsNullOrEmpty(author.lName) && string.IsNullOrEmpty(author.fName))
+                                {
+                                    author.fName = authorNames[1].Trim();
+                                    author.lName = authorNames[0].Trim();
+                                }
+                                else
+                                {
+                                    //check aliases
+                                    if (!(author.fName.Equals(authorNames[1].Trim())) || !(author.lName.Equals(authorNames[0].Trim())))
+                                    {
+                                        if (author.Aliases.Count > 0)
+                                        {
+                                            foreach (Author a in author.Aliases)
+                                            {
+                                                if (!(a.fName.Equals(authorNames[1].Trim())) || !(a.lName.Equals(authorNames[0].Trim())))
+                                                {
+                                                    author.Aliases.Add(new Author { fName = authorNames[1].Trim(), lName = authorNames[0].Trim() });
+                                                }
+                                                else { break; }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            author.Aliases.Add(new Author { fName = authorNames[1].Trim(), lName = authorNames[0].Trim() });
+                                        }
                                     }
                                 }
                             }
-                        };
-
-
-                        foreach (XElement mEl in poemMetadata.Descendants("field"))
-                        {
-                            XElement field = new XElement(mEl);
-                            string fieldName = mEl.Element("name").Elements().First().Value;
-
-                            if (fieldName == "Title")
-                            {
-                                setValue(field, eco.langContent["en"].title, eco.langContent["es"].title, eco.langContent["pt"].title);
-                            }
-                            else if (fieldName == "Author")
-                            {
-                                setValue(field, eco.langContent["en"].title, eco.langContent["es"].title, eco.langContent["pt"].title);
-                            }
-                            else if (fieldName == "Content")
-                            {
-                                setValue(field, eco.langContent["en"].content, eco.langContent["es"].content, eco.langContent["pt"].content);
-                            }
-                            else if (fieldName == "Country")
-                            {
-                                setValue(field, eco.country, "", "");
-                            }
-                            else if (fieldName == "Biome")
-                            {
-                                setValue(field, eco.biome, "", "");
-                            }
-                            else if (fieldName == "RelatedLinks")
-                            {
-                                setValue(field, eco.langContent["en"].reference, eco.langContent["es"].reference, eco.langContent["pt"].reference);
-                            }
-                            else if (fieldName == "Category")
-                            {
-                                //setValue(field, eco.country, "");
-                                setOption(field.Element("options"), eco.category);
-                            }
-
-                            eFields.Add(field);
                         }
-
-                        //create author entity
-                        XElement author = createAuthorEntity(eco.author, authorMetadataSet.Id, authorMetadata, db);
-                        if (author != null)
-                        {
-                            aggregations.Add(author);
-
-                        }
-
-                        if (countFile == MAXFILES) //save the file for every 10k items
-                        {
-                            XElement _relationships = createRelationships();
-
-                            ingestion.Add(aggregations);
-                            ingestion.Add(_relationships);
-                            doc.Save(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml");
-                            countFile = 0;
-                            aggregations.RemoveAll();
-                            ingestion.RemoveAll();
-                            countSaveFile++;
-
-                            RelationshipsList.Clear();
-                        }
-
-                        //add relationship
-                        RelationshipsList.Add(new Relationship { parentGuid = AuthorGuid, childGuid = itemGuid });
-
                     }
-
-                    //save file
-                    XElement relationships = createRelationships();
-
-                    ingestion.Add(aggregations);
-                    ingestion.Add(relationships);
-
-                    WriteDocument(pathOutput + "\\EcopoedsiaIngestion-Aggregation-" + countSaveFile + ".xml", doc);
-
-                    aggregations.RemoveAll();
-                    ingestion.RemoveAll();
-
-                    RelationshipsList.Clear();
-                    
                 }
             }
+        
+
+            return author;
         }
 
         public static XElement createRelationships()
@@ -353,7 +448,7 @@ namespace EcopoesiaDataConverter
             return Relationships;
         }
 
-        public static XElement createAuthorEntity(string author, int metadataSetID,XElement authorMetadata, CatfishDbContext db)
+        public static XElement createAuthorEntity(string author, int metadataSetID,XElement authorMetadata, CatfishDbContext db, Author aliasName= null)
         {
             if(!string.IsNullOrEmpty(author))
             {
@@ -416,6 +511,7 @@ namespace EcopoesiaDataConverter
 
                                 if (exist)
                                 {
+                                    
                                     break;
                                 }
                             }
@@ -484,12 +580,23 @@ namespace EcopoesiaDataConverter
                         if (mEl.Element("name").Value == "FirstName" && authorNames.Length > 1)
                         {
                             setValue(field, authorNames[1].Trim(), "FirstName");
+                            
                         }
                         else if (mEl.Element("name").Value == "LastName")
                         {
                             setValue(field, authorNames[0].Trim(), "LastName");
                         }
                         
+                        if(aliasName.Aliases.Count > 0)
+                        {
+                            foreach(Author a in aliasName.Aliases)
+                            {
+                                setValue(field, a.fName, "FirstName");
+                                setValue(field, a.lName, "LastName");
+                            }
+
+                            aliasName.Aliases.Clear(); //add only once
+                        }
 
                         eFields.Add(field);
                        
