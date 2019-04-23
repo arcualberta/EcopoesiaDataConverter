@@ -58,8 +58,8 @@ namespace EcopoesiaDataConverter
     {
         public static string PoemEntityTypeName = "Poems";
         public static string AuthorEntityTypeName = "Author";
-        public static int PoemsMetadataSetId = 170;//1;
-        public static int AuthorMetadataSetId = 165;//2;
+        public static int PoemsMetadataSetId = 1;
+        public static int AuthorMetadataSetId = 2;
         public static int MAXFILES = 5000;
         public static List<Author> CreatedAuthorList = new List<Author>(); //For keep track of author who's not in the db yet but has been created in this ingestion process
         public static string AuthorGuid = string.Empty;

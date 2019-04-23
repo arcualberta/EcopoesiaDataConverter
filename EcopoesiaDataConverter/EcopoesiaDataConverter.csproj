@@ -84,7 +84,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Melania-Cathfish\Catfish\Catfish.Core\Catfish.Core.csproj">
+    <ProjectReference Include="..\..\Catfish\Catfish.Core\Catfish.Core.csproj">
       <Project>{5d2c027e-76f8-4cf0-8c58-cfd5219e3d18}</Project>
       <Name>Catfish.Core</Name>
     </ProjectReference>
