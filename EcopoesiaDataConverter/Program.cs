@@ -17,6 +17,8 @@ namespace EcopoesiaDataConverter
         public string title { get; set; }
         public string content { get; set; }
         public string reference { get; set; }
+        public string translatedBy { get; set; }
+        public string epigraph { get; set; }
     }
 
     public class ecopoesia
@@ -85,13 +87,53 @@ namespace EcopoesiaDataConverter
             return result.ToString();
         }
 
+        static void ExtractTitleInformaiton(XElement titleElement, LanguageContent langContent)
+        {
+            const string TRANSLATION_CHECK = "translated by";
+
+            foreach(var node in titleElement.Nodes())
+            {
+                switch (node.NodeType)
+                {
+                    case System.Xml.XmlNodeType.Text:
+                        langContent.title = node.ToString();
+                        break;
+
+                    case System.Xml.XmlNodeType.Element:
+                        XElement element = (XElement)node;
+                        if(element.Value.Trim().ToLower().StartsWith(TRANSLATION_CHECK)){
+                            // It is translation
+                            langContent.translatedBy = element.Value.Trim().Substring(TRANSLATION_CHECK.Length).Trim();
+                        }
+                        else
+                        {
+                            // Read each value of the epigraph and store it as html
+                            string content = element.ToString().Trim();
+                            if(langContent.epigraph == null)
+                            {
+                                if (content != "<p></p>")
+                                {
+                                    langContent.epigraph = content;
+                                }
+                            }
+                            else
+                            {
+                                langContent.epigraph += '\n';
+                                langContent.epigraph += content;
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
         static void ExtractLanguageContent(LanguageContent langContent, XElement element)
         {
             foreach (XElement s in element.Descendants("title"))
             {
                 if (s.Name == "title")
                 {
-                    langContent.title = s.ToString().Replace("<title>","").Replace("</title>","");
+                    ExtractTitleInformaiton(s, langContent);
                 }
             }
             foreach (XElement s in element.Descendants("body"))
@@ -271,6 +313,14 @@ namespace EcopoesiaDataConverter
                                 if (fieldName == "Title")
                                 {
                                     setValue(field, eco.langContent["en"].title, eco.langContent["es"].title, eco.langContent["pt"].title);
+                                }
+                                else if (fieldName == "TranslatedBy")
+                                {
+                                    setValue(field, eco.langContent["en"].translatedBy, eco.langContent["es"].translatedBy, eco.langContent["pt"].translatedBy);
+                                }
+                                else if (fieldName == "Epigraph")
+                                {
+                                    setValue(field, eco.langContent["en"].epigraph, eco.langContent["es"].epigraph, eco.langContent["pt"].epigraph);
                                 }
                                 else if (fieldName == "Author")
                                 {
@@ -523,6 +573,8 @@ namespace EcopoesiaDataConverter
                 {
                     XElement item = new XElement("item");
                     XAttribute xmlLangEn = new XAttribute(XNamespace.Xml + "lang", "en");
+                    XAttribute xmlLangEs = new XAttribute(XNamespace.Xml + "lang", "es");
+                    XAttribute xmlLangPt = new XAttribute(XNamespace.Xml + "lang", "pt");
 
                     // aggregations.Add(item);
                     string now = DateTime.Now.ToShortDateString();
@@ -568,7 +620,19 @@ namespace EcopoesiaDataConverter
 
                             textValue.Add(xmlLangEn);
                             textValue.Value = value; //en
-                            
+
+                            textValue = new XElement("text");
+                            valueElement.Add(textValue);
+
+                            textValue.Add(xmlLangEs);
+                            textValue.Value = value; //es
+
+                            textValue = new XElement("text");
+                            valueElement.Add(textValue);
+
+                            textValue.Add(xmlLangPt);
+                            textValue.Value = value; //pt
+
                         }
                        
                     };
